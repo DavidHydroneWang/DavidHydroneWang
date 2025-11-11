@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Qv2ray
+Comment=qv2ray software
+Exec=/home/david/Softwares/Qv2ray/Qv2ray-v2.7.0-linux-x64.AppImage %U
+Icon=/home/david/Softwares/Qv2ray/qv2ray.png
+Terminal=false
