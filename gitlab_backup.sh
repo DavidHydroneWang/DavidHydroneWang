@@ -255,12 +255,45 @@ verify_backup_integrity() {
 
 # 清理旧备份（可选）
 cleanup_old_backups() {
-    local retention_days=7
-    
-    log "清理 $retention_days 天前的旧备份..."
-    
-    sudo find "$BACKUP_BASE" -name "gitlab_complete_*" -type d -mtime +$retention_days -exec rm -rf {} \; 2>/dev/null && \
-    log "旧备份清理完成"
+    #local retention_days=7
+    local RETENTION_DAYS=7
+    local current_timestamp=$(date +%s)
+    local seconds_in_day=86400
+    local threshold_timestamp=$((current_timestamp - RETENTION_DAYS * seconds_in_day))
+
+    if [[ -z "$BACKUP_BASE" || ! -d "$BACKUP_BASE" ]]; then
+        log "错误：备份目录未设置或无效: BACKUP_BASE='$BACKUP_BASE'"
+        exit 1
+    fi
+
+    log "开始基于文件夹名日期清理 $RETENTION_DAYS 天前的 GitLab 备份，目录: $BACKUP_BASE"
+
+    # 查找所有 gitlab_complete_* 目录
+    find "$BACKUP_BASE" -maxdepth 1 -type d -name "gitlab_complete_*" | while read -r dir; do
+        dirname=$(basename "$dir")
+
+        # 提取日期部分，假设格式为 gitlab_complete_YYYYMMDD_HHMMSS
+        if [[ $dirname =~ ^gitlab_complete_([0-9]{8})_[0-9]{6}$ ]]; then
+            file_date=${BASH_REMATCH[1]}  # 如 20251106
+            file_timestamp=$(date -d "$file_date" +%s 2>/dev/null)
+
+            if [[ -n "$file_timestamp" ]]; then
+                if [[ $file_timestamp -lt $threshold_timestamp ]]; then
+                    log "删除过期备份（日期早于 $RETENTION_DAYS 天前）: $dirname"
+                    rm -rf "$dir" 2>&1 | while read -r line; do log "rm 日志: $line"; done
+                else
+                    log "保留备份（仍在保留期内）: $dirname"
+                fi
+            else
+                log "警告：无法解析日期，跳过文件夹: $dirname"
+            fi
+        else
+            log "跳过不符合命名规则的文件夹: $dirname"
+        fi
+    done
+
+    log "基于名称日期的旧备份清理完成"
+
 }
 
 # 主备份流程
