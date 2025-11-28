@@ -1,0 +1,5 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =3
+let g:netrw_dirhist_3='/home/david/Work_Mounted/IMU/gnss-ins-zupt/GNSS_INS_ZUPT'
+let g:netrw_dirhist_2='/home/david/Work/ContAwareMotionPred/ContAwareMotionPred/datasets'
+let g:netrw_dirhist_1='/home/david/Work/STSGCN/STSGCN/utils'
