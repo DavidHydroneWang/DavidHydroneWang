@@ -114,7 +114,7 @@ backup_application_data() {
         error "应用数据备份失败 (请检查 GitLab 服务是否运行和权限)"
     fi
     # 移动备份数据到目标文件夹
-    sudo mv /home/backup/*gitlab_backup.tar "$BACKUP_DIR/"
+    sudo mv /home/data/backup/*gitlab_backup.tar "$BACKUP_DIR/"
     
     # BUG FIX 3: 验证备份文件，使用 find 模糊匹配来应对时间戳前缀
     if find "$BACKUP_DIR" -maxdepth 1 -name "*_${TIMESTAMP}_gitlab_backup.tar" -print -quit 2>/dev/null; then
@@ -183,7 +183,8 @@ backup_log_files() {
     log "开始备份日志文件..."
     
     if [ -d "/var/log/gitlab" ]; then
-        sudo tar -czf "$BACKUP_DIR/logs.tar.gz" -C /var/log gitlab/ 2>/dev/null && log "日志文件备份完成"
+        sudo tar -czf "$BACKUP_DIR/logs.tar.gz" --ignore-failed-read --warning=no-file-changed -C /var/log gitlab/ 2>/dev/null || warn "日志备份可能不完整"
+	log "日志文件备份完成"
     fi
 }
 
@@ -256,7 +257,7 @@ verify_backup_integrity() {
 # 清理旧备份（可选）
 cleanup_old_backups() {
     #local retention_days=7
-    local RETENTION_DAYS=7
+    local RETENTION_DAYS=5
     local current_timestamp=$(date +%s)
     local seconds_in_day=86400
     local threshold_timestamp=$((current_timestamp - RETENTION_DAYS * seconds_in_day))
@@ -293,7 +294,7 @@ cleanup_old_backups() {
     done
 
     log "基于名称日期的旧备份清理完成"
-
+    
 }
 
 # 主备份流程
